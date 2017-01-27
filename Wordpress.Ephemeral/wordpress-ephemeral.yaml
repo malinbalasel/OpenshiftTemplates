@@ -124,25 +124,16 @@ objects:
                 containerPort: 8080
                 protocol: TCP
             env:
-              -
-                name: MYSQL_USER
-                value: ${MYSQL_USER}
-              -
-                name: MYSQL_PASSWORD
-                value: ${MYSQL_PASSWORD}
-              -
-                name: MYSQL_DATABASE
-                value: ${MYSQL_DATABASE}
-              -
+              - 
                 name: WORDPRESS_DB_USER
-                value: ${MYSQL_USER}
-              -
+                value: ${WORDPRESS_DB_USER}
+              - 
                 name: WORDPRESS_DB_PASSWORD
-                value: ${MYSQL_PASSWORD}
-              -
+                value: ${WORDPRESS_DB_PASSWORD}
+              - 
                 name: WORDPRESS_DB_NAME
-                value: ${MYSQL_DATABASE}
-              -
+                value: ${APPLICATION_NAME}db
+              - 
                 name: WORDPRESS_DB_HOST
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
@@ -206,23 +197,14 @@ objects:
                 protocol: TCP
             env: 
               - 
-                name: "MYSQL_USER"
-                value: "${MYSQL_USER}"
-              - 
-                name: "MYSQL_PASSWORD"
-                value: "${MYSQL_PASSWORD}"
-              - 
-                name: "MYSQL_DATABASE"
-                value: "${MYSQL_DATABASE}"
-              - 
                 name: WORDPRESS_DB_USER
-                value: ${MYSQL_USER}
+                value: ${WORDPRESS_DB_USER}
               - 
                 name: WORDPRESS_DB_PASSWORD
-                value: ${MYSQL_PASSWORD}
+                value: ${WORDPRESS_DB_PASSWORD}
               - 
                 name: WORDPRESS_DB_NAME
-                value: ${MYSQL_DATABASE}
+                value: ${APPLICATION_NAME}db
               - 
                 name: WORDPRESS_DB_HOST
                 value: ${APPLICATION_NAME}-db-svc
@@ -355,12 +337,9 @@ parameters:
     description: "A secret string used to configure the Git webhook."
     generate: "expression"
     from: "[a-zA-Z0-9]{40}"
-  - name: "MYSQL_DATABASE"
-    displayName: "Database Name"
-    value: "mysqldb"
-  - name: "MYSQL_USER"
+  - name: "WORDPRESS_DB_USER"
     displayName: "Database User"
-    value: "mysql"
-  - name: "MYSQL_PASSWORD"
+    value: "wordpress"
+  - name: "WORDPRESS_DB_PASSWORD"
     displayName: "Database Password"
-    value: "mysql"
+    value: "wordpress"
