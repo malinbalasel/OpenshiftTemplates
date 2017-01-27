@@ -125,11 +125,11 @@ objects:
             image: "${APPLICATION_NAME}"
             ports:
               -
-                name: "port-http"
+                name: "http"
                 containerPort: 8080
                 protocol: TCP
               -
-                name: "port-https"
+                name: "https"
                 containerPort: 8443
                 protocol: TCP
             env:
@@ -203,7 +203,7 @@ objects:
             image: "${DATABASE_SERVICE}"
             ports:
               -
-                name: "port-db"
+                name: "db"
                 containerPort: 3306
                 protocol: TCP
             env:
@@ -265,12 +265,12 @@ objects:
   spec:
     ports:
       -
-        name: ""
+        name: "http"
         protocol: TCP
         port: 8080
         targetPort: 8080
       -
-        name: ""
+        name: "https"
         protocol: TCP
         port: 8443
         targetPort: 8443
@@ -291,7 +291,7 @@ objects:
       description: "Exposes and load balances the application frontend pods."
   spec:
     ports:
-      - name: ""
+      - name: "db"
         protocol: TCP
         port: 3306
         targetPort: 3306
