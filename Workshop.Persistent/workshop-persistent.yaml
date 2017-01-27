@@ -23,40 +23,40 @@ objects:
       name: ${APPLICATION_NAME}
       labels:
         app: ${APPLICATION_NAME}
-        annotations: 
+        annotations:
           description: "Defines how to build the application"
   spec:
-    triggers: 
-      - 
+    triggers:
+      -
         type: ImageChange
         imageChange: {}
-      - 
+      -
         type: ConfigChange
-      - 
+      -
         type: GitHub
-        github: 
+        github:
           secret: "${WEBHOOK_SECRET}"
-      - 
+      -
         type: Generic
-        generic: 
+        generic:
           secret: "${WEBHOOK_SECRET}"
     runPolicy: Serial
     source:
       type: Git
-      git: 
+      git:
         uri: ${SOURCE_REPOSITORY_URL}
         ref: ${SOURCE_REPOSITORY_REF}
-      contextDir: ${SOURCE_REPOSITORY_CONTEXT}  
+      contextDir: ${SOURCE_REPOSITORY_CONTEXT}
     strategy:
       type: Source
       sourceStrategy:
-        from: 
+        from:
           kind: ImageStreamTag
           namespace: openshift
           name: "jboss-webserver30-tomcat7-openshift:latest"
         env: {}
     output:
-      to: 
+      to:
         kind: ImageStreamTag
         name: "${APPLICATION_NAME}:latest"
 # +++++++++++++++++++++++++++
@@ -85,11 +85,11 @@ objects:
   metadata:
     name: ${APPLICATION_NAME}
     labels:
-      app: ${APPLICATION_NAME} 
-    annotations: 
+      app: ${APPLICATION_NAME}
+    annotations:
       description: "Defines how to deploy the application server"
   spec:
-    strategy: 
+    strategy:
       type: Rolling
       rollingParams:
         updatePeriodSeconds: 1
@@ -116,11 +116,11 @@ objects:
     template:
       metadata:
         name: ${APPLICATION_NAME}
-        labels: 
-          deploymentConfig: ${APPLICATION_NAME}  
+        labels:
+          deploymentConfig: ${APPLICATION_NAME}
       spec:
         containers:
-          - 
+          -
             name: "${APPLICATION_NAME}"
             image: "${APPLICATION_NAME}"
             ports:
@@ -129,17 +129,17 @@ objects:
                 containerPort: 8080
                 protocol: TCP
               -
-                name: "port-https" 
+                name: "port-https"
                 containerPort: 8443
                 protocol: TCP
-            env: 
-              - 
+            env:
+              -
                 name: "MYSQL_USER"
                 value: "${DATABASE_USER}"
-              - 
+              -
                 name: "MYSQL_PASSWORD"
                 value: "${DATABASE_PASSWORD}"
-              - 
+              -
                 name: "MYSQL_DATABASE"
                 value: "${DATABASE_NAME}"
             resources: {}
@@ -159,13 +159,13 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: ${APPLICATION_NAME}-db
+    name: "${DATABASE_SERVICE}"
     labels:
-      app: ${APPLICATION_NAME}  
-    annotations: 
+      app: ${APPLICATION_NAME}
+    annotations:
       description: "Defines how to deploy the application database"
   spec:
-    strategy: 
+    strategy:
       type: Recreate
       recreateParams:
         timeoutSeconds: 600
@@ -175,7 +175,7 @@ objects:
         imageChangeParams:
           automatic: true
           containerNames:
-            - ${APPLICATION_NAME}-db
+            - "${DATABASE_SERVICE}"
           from:
             kind: ImageStreamTag
             namespace: openshift
@@ -185,35 +185,35 @@ objects:
     replicas: 1
     test: false
     selector:
-      deploymentConfig: ${APPLICATION_NAME}-db
+      deploymentConfig: "${DATABASE_SERVICE}"
     template:
       metadata:
-        name: ${APPLICATION_NAME}-db
-        labels: 
-          deploymentConfig: ${APPLICATION_NAME}-db  
+        name: "${DATABASE_SERVICE}"
+        labels:
+          deploymentConfig: "${DATABASE_SERVICE}"
       spec:
         volumes:
           -
-            name: ${APPLICATION_NAME}-db-vol
+            name: "${DATABASE_SERVICE}"-vol
             persistentVolumeClaim:
-              claimName: ${APPLICATION_NAME}-db-pvc
+              claimName: "${DATABASE_SERVICE}"-pvc
         containers:
-          - 
-            name: "${APPLICATION_NAME}-db"
-            image: "${APPLICATION_NAME}-db"
+          -
+            name: "${DATABASE_SERVICE}"
+            image: "${DATABASE_SERVICE}"
             ports:
               -
                 name: "port-db"
                 containerPort: 3306
                 protocol: TCP
-            env: 
-              - 
+            env:
+              -
                 name: "MYSQL_USER"
                 value: "${DATABASE_USER}"
-              - 
+              -
                 name: "MYSQL_PASSWORD"
                 value: "${DATABASE_PASSWORD}"
-              - 
+              -
                 name: "MYSQL_DATABASE"
                 value: "${DATABASE_NAME}"
             resources:
@@ -222,7 +222,7 @@ objects:
               requests: {}
             volumeMounts:
               -
-                name: ${APPLICATION_NAME}-db-vol
+                name: "${DATABASE_SERVICE}"-vol
                 mountPath: /var/lib/mysql/data
             livenessProbe:
               tcpSocket:
@@ -234,7 +234,7 @@ objects:
               failureThreshold: 3
             readinessProbe:
               exec:
-                command: [/bin/sh, '-i', '-c', 'MYSQL_PWD=''${DATABASE_PASSWORD}'' mysql -h 127.0.0.1 -u ${DATABASE_USER} -D ${DATABASE_NAME} -e ''SELECT 1''']        
+                command: [/bin/sh, '-i', '-c', 'MYSQL_PWD=''${DATABASE_PASSWORD}'' mysql -h 127.0.0.1 -u ${DATABASE_USER} -D ${DATABASE_NAME} -e ''SELECT 1''']
               initialDelaySeconds: 5
               timeoutSeconds: 1
               periodSeconds: 10
@@ -257,7 +257,7 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: "${APPLICATION_NAME}-svc"
+    name: "${APPLICATION_NAME}"
     labels:
       app: "${APPLICATION_NAME}"
     annotations:
@@ -265,12 +265,10 @@ objects:
   spec:
     ports:
       -
-        name: "port-http"
         protocol: TCP
         port: 8080
         targetPort: 8080
       -
-        name: "port-https"
         protocol: TCP
         port: 8443
         targetPort: 8443
@@ -284,7 +282,7 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: "${APPLICATION_NAME}-db-svc"
+    name: "${DATABASE_SERVICE}"
     labels:
       app: "${APPLICATION_NAME}"
     annotations:
@@ -292,12 +290,11 @@ objects:
   spec:
     ports:
       -
-        name: "port-db"
         protocol: TCP
         port: 3306
         targetPort: 3306
     selector:
-      deploymentconfig: ${APPLICATION_NAME}-db
+      deploymentconfig: ${DATABASE_SERVICE}
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////////
@@ -316,7 +313,7 @@ objects:
     host: "${APPLICATION_HOSTNAME}"
     to:
       kind: Service
-      name: ${APPLICATION_NAME}-svc
+      name: ${APPLICATION_NAME}
     port:
       targetPort: 8080
     tls:
@@ -330,7 +327,7 @@ objects:
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: "${APPLICATION_NAME}-db-pvc"
+    name: "${DATABASE_SERVICE}-pvc"
     labels:
       app: "${APPLICATION_NAME}"
     annotations:
@@ -346,7 +343,7 @@ objects:
 # ////////////////////
 # /// PARAMETERS /////
 # ////////////////////
-parameters: 
+parameters:
   - name: "APPLICATION_NAME"
     displayName: "Application name"
     description: "The name assigned to all of the objects defined in this template."
@@ -356,13 +353,13 @@ parameters:
     displayName: "Application hostname"
     description: "The hostname for exposing your application on the Internal Network (*.kermit.itn.intraorange) or on the Internet (*.kmt.orange.com)."
   - name: "PUBLIC_NETWORK"
-    displayName: "Application exposed on Internet flag"
-    description: "If your application will be exposed on the Internet (HOSTNAME = *.kmt.orange.com) you need to setup this flag with the value: public"
+    displayName: "If your application will be exposed on the Internet (HOSTNAME = *.kmt.orange.com) you need to setup this flag with the value: public"
+    description: "The name assigned to all of the objects defined in this template."
   - name: "SOURCE_REPOSITORY_URL"
     displayName: "Git Repository URL"
     description: "The URL of the repository with your application source code."
     required: true
-    value: "https://github.com/orangekmt/OpenshiftTemplates.git"
+    value: "https://github.com/orangekmt/workshop-persistent.git"
   - name: "SOURCE_REPOSITORY_REF"
     displayName: "Git Repository Reference"
     description: "The branch/tag/ref inside the repository where your application source code resides."
@@ -370,12 +367,14 @@ parameters:
   - name: "SOURCE_REPOSITORY_CONTEXT"
     displayName: "Git Repository Context Directory"
     description: "The location inside the repository where your application source code resides."
-    value: "Workshop.Example.Persistent"
   - name: "WEBHOOK_SECRET"
     displayName: "Git Webhook Secret"
     description: "A secret string used to configure the Git webhook."
     generate: "expression"
     from: "[a-zA-Z0-9]{40}"
+  - name: "DATABASE_SERVICE"
+    displayName: "Database Name"
+    value: "mysql"
   - name: "DATABASE_NAME"
     displayName: "Database Name"
     value: "mysqldb"
