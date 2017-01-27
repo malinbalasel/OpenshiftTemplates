@@ -4,7 +4,7 @@ kind: "Template"
 metadata:
   name: wordpress-ephemeral
   annotations:
-    description: "An example WordPress application with a MySQL database and persistent storage only for DB."
+    description: "An example WordPress application with a MySQL database."
     tags: "quickstart,php,mysql,instant-app,kermit"
     iconClass: icon-wordpress
 labels:
@@ -120,7 +120,7 @@ objects:
             image: ${APPLICATION_NAME}:latest
             ports:
               - 
-                name: "port-http"
+                name: "http"
                 containerPort: 8080
                 protocol: TCP
             env:
@@ -195,18 +195,13 @@ objects:
         labels: 
           deploymentConfig: ${APPLICATION_NAME}-db  
       spec:
-        volumes:
-          -
-            name: ${APPLICATION_NAME}-db-vol
-            persistentVolumeClaim:
-              claimName: ${APPLICATION_NAME}-db-pvc
         containers:
           - 
             name: "${APPLICATION_NAME}-db"
             image: "${APPLICATION_NAME}-db"
             ports:
               -
-                name: "port-db"
+                name: "db"
                 containerPort: 3306
                 protocol: TCP
             env: 
@@ -234,10 +229,6 @@ objects:
             resources:
               limits:
                 memory: 512Mi
-            volumeMounts:
-              -
-                name: ${APPLICATION_NAME}-db-vol
-                mountPath: /var/lib/mysql/data
             livenessProbe:
               tcpSocket:
                 port: 3306
@@ -279,7 +270,7 @@ objects:
   spec:
     ports:
       -
-        name: "port-http"
+        name: "http"
         protocol: TCP
         port: 8080
         targetPort: 8080
@@ -301,7 +292,7 @@ objects:
   spec:
     ports:
       -
-        name: "port-db"
+        name: "db"
         protocol: TCP
         port: 3306
         targetPort: 3306
@@ -331,25 +322,6 @@ objects:
     tls:
       termination: edge
       insecureEdgeTerminationPolicy: Allow
-# ----------------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------------
-# /////////////////////////////////////////
-# /// BACKEND PERSISTENT VOLUME CLAIM /////
-# /////////////////////////////////////////
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: "${APPLICATION_NAME}-db-pvc"
-    labels:
-      app: "${APPLICATION_NAME}"
-    annotations:
-      description: "The pvc used for the application DB."
-  spec:
-    accessModes:
-      - "ReadWriteMany"
-    resources:
-      requests:
-        storage: "${DATABASE_VOLUME_CAPACITY}"
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////
@@ -392,8 +364,3 @@ parameters:
   - name: "MYSQL_PASSWORD"
     displayName: "Database Password"
     value: "mysql"
-  - name: "DATABASE_VOLUME_CAPACITY"
-    displayName: "Database Volume Capacity"
-    description: "Volume space available for data, e.g. 1Gi, 3Gi."
-    value: "1Gi"
-    required: true
