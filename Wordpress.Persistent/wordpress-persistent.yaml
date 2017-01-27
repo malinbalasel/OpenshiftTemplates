@@ -125,7 +125,7 @@ objects:
             image: ${APPLICATION_NAME}:latest
             ports:
               - 
-                name: "port-http"
+                name: "http"
                 containerPort: 8080
                 protocol: TCP
             env:
@@ -206,16 +206,16 @@ objects:
       spec:
         volumes:
           -
-            name: ${APPLICATION_NAME}-db-vol
+            name: ${APPLICATION_NAME}-vol
             persistentVolumeClaim:
-              claimName: ${APPLICATION_NAME}-db-pvc
+              claimName: ${APPLICATION_NAME}-pvc
         containers:
           - 
             name: "${APPLICATION_NAME}-db"
             image: "${APPLICATION_NAME}-db"
             ports:
               -
-                name: "port-db"
+                name: "db"
                 containerPort: 3306
                 protocol: TCP
             env: 
@@ -243,7 +243,7 @@ objects:
             resources: {}
             volumeMounts:
               -
-                name: ${APPLICATION_NAME}-db-vol
+                name: ${APPLICATION_NAME}-vol
                 mountPath: /var/lib/mysql/data
             livenessProbe:
               tcpSocket:
@@ -286,7 +286,7 @@ objects:
   spec:
     ports:
       -
-        name: "port-http"
+        name: "http"
         protocol: TCP
         port: 8080
         targetPort: 8080
@@ -308,7 +308,7 @@ objects:
   spec:
     ports:
       -
-        name: "port-db"
+        name: "db"
         protocol: TCP
         port: 3306
         targetPort: 3306
@@ -359,25 +359,6 @@ objects:
         storage: "${APPLICATION_VOLUME_CAPACITY}"
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
-# /////////////////////////////////////////
-# /// BACKEND PERSISTENT VOLUME CLAIM /////
-# /////////////////////////////////////////
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: "${APPLICATION_NAME}-db-pvc"
-    labels:
-      app: "${APPLICATION_NAME}"
-    annotations:
-      description: "The pvc used for the application DB."
-  spec:
-    accessModes:
-      - "ReadWriteMany"
-    resources:
-      requests:
-        storage: "${DATABASE_VOLUME_CAPACITY}"
-# ----------------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------------
 # ////////////////////
 # /// PARAMETERS /////
 # ////////////////////
@@ -416,15 +397,10 @@ parameters:
     required: true
   - name: "MYSQL_DATABASE"
     displayName: "Database Name"
-    value: "mysqldb"
+    value: "wordpressdb"
   - name: "MYSQL_USER"
     displayName: "Database User"
-    value: "mysql"
+    value: "wordpress"
   - name: "MYSQL_PASSWORD"
     displayName: "Database Password"
-    value: "mysql"
-  - name: "DATABASE_VOLUME_CAPACITY"
-    displayName: "Database Volume Capacity"
-    description: "Volume space available for data, e.g. 1Gi, 3Gi."
-    value: "3Gi"
-    required: true
+    value: "wordpress"
