@@ -194,9 +194,9 @@ objects:
       spec:
         volumes:
           -
-            name: "${DATABASE_SERVICE}"-vol
+            name: "${DATABASE_SERVICE}-vol"
             persistentVolumeClaim:
-              claimName: "${DATABASE_SERVICE}"-pvc
+              claimName: "${DATABASE_SERVICE}-pvc"
         containers:
           -
             name: "${DATABASE_SERVICE}"
@@ -222,7 +222,7 @@ objects:
               requests: {}
             volumeMounts:
               -
-                name: "${DATABASE_SERVICE}"-vol
+                name: "${DATABASE_SERVICE}-vol"
                 mountPath: /var/lib/mysql/data
             livenessProbe:
               tcpSocket:
