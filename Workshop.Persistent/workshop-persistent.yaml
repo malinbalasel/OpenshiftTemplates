@@ -265,10 +265,12 @@ objects:
   spec:
     ports:
       -
+        name: ""
         protocol: TCP
         port: 8080
         targetPort: 8080
       -
+        name: ""
         protocol: TCP
         port: 8443
         targetPort: 8443
@@ -289,7 +291,7 @@ objects:
       description: "Exposes and load balances the application frontend pods."
   spec:
     ports:
-      -
+      - name: ""
         protocol: TCP
         port: 3306
         targetPort: 3306
