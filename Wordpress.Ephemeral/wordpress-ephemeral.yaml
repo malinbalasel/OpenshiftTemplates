@@ -124,16 +124,25 @@ objects:
                 containerPort: 8080
                 protocol: TCP
             env:
-              - 
+              -
+                name: MYSQL_USER
+                value: ${MYSQL_USER}
+              -
+                name: MYSQL_PASSWORD
+                value: ${MYSQL_PASSWORD}
+              -
+                name: MYSQL_DATABASE
+                value: ${MYSQL_DATABASE}
+              -
                 name: WORDPRESS_DB_USER
-                value: ${WORDPRESS_DB_USER}
-              - 
+                value: ${MYSQL_USER}
+              -
                 name: WORDPRESS_DB_PASSWORD
-                value: ${WORDPRESS_DB_PASSWORD}
-              - 
+                value: ${MYSQL_PASSWORD}
+              -
                 name: WORDPRESS_DB_NAME
-                value: ${APPLICATION_NAME}db
-              - 
+                value: ${MYSQL_DATABASE}
+              -
                 name: WORDPRESS_DB_HOST
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
@@ -196,16 +205,25 @@ objects:
                 containerPort: 3306
                 protocol: TCP
             env: 
-              - 
+              -
+                name: MYSQL_USER
+                value: ${MYSQL_USER}
+              -
+                name: MYSQL_PASSWORD
+                value: ${MYSQL_PASSWORD}
+              -
+                name: MYSQL_DATABASE
+                value: ${MYSQL_DATABASE}
+              -
                 name: WORDPRESS_DB_USER
-                value: ${WORDPRESS_DB_USER}
-              - 
+                value: ${MYSQL_USER}
+              -
                 name: WORDPRESS_DB_PASSWORD
-                value: ${WORDPRESS_DB_PASSWORD}
-              - 
+                value: ${MYSQL_PASSWORD}
+              -
                 name: WORDPRESS_DB_NAME
-                value: ${APPLICATION_NAME}db
-              - 
+                value: ${MYSQL_DATABASE}
+              -
                 name: WORDPRESS_DB_HOST
                 value: ${APPLICATION_NAME}-db-svc
             resources:
@@ -337,9 +355,12 @@ parameters:
     description: "A secret string used to configure the Git webhook."
     generate: "expression"
     from: "[a-zA-Z0-9]{40}"
-  - name: "WORDPRESS_DB_USER"
+  - name: "MYSQL_DATABASE"
+    displayName: "Database Name"
+    value: "wordpressdb"
+  - name: "MYSQL_USER"
     displayName: "Database User"
     value: "wordpress"
-  - name: "WORDPRESS_DB_PASSWORD"
+  - name: "MYSQL_PASSWORD"
     displayName: "Database Password"
     value: "wordpress"
