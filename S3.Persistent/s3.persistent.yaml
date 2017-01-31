@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: s3-ephemeral
+  name: s3-persistent
   annotations:
-    description: "An Scality S3 server."
+    description: "An Scality S3 server with an persistent storage."
     iconClass: "icon-nodejs"
     tags: "quickstart,instant-app,nodejs,kermit"
 labels:
-  template: s3-ephemeral
+  template: s3-persistent
 objects:
 # +++++++++++++++++++++++++++
 # +++ LAYER 0 BASE IMAGES +++
@@ -134,6 +134,10 @@ objects:
               items:
               - key: config.json
                 path: config.json
+          -
+            name: ${APPLICATION_NAME}-data
+            persistentVolumeClaim:
+              claimName: "${APPLICATION_NAME}-pvc"
         containers:
           - 
             name: "${APPLICATION_NAME}"
@@ -147,11 +151,20 @@ objects:
               - 
                 name: "S3_CONFIG_FILE"
                 value: "${S3_CONFIG_FILE}"
+              - 
+                name: "S3DATAPATH"
+                value: /data/data
+              - 
+                name: "S3METADATAPATH"
+                value: /data/metadata
             resources: {}
             volumeMounts:
               -
                 name: ${APPLICATION_NAME}-conf
                 mountPath: /config
+              -
+                name: ${APPLICATION_NAME}-data
+                mountPath: /data
             terminationMessagePath: "/dev/termination-log"
             imagePullPolicy: Always
             securityContext:
@@ -207,6 +220,21 @@ objects:
     tls:
       termination: edge
       insecureEdgeTerminationPolicy: Allow
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# /////////////
+# /// PVC /////
+# /////////////
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-pvc"
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: ${S3_VOLUME_CAPACITY}
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////
@@ -285,3 +313,9 @@ parameters:
   - name: "S3_CONFIG_FILE"
     displayName: "S3 server config file path"
     value: "/config/config.json"
+  - name: "S3_VOLUME_CAPACITY"
+    description: Volume space available for the S3 storage.
+    displayName: S3 Volume Capacity
+    name: S3_VOLUME_CAPACITY
+    required: true
+    value: "3Gi"
