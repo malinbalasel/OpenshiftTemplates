@@ -134,16 +134,7 @@ objects:
                 name: MYSQL_DATABASE
                 value: ${MYSQL_DATABASE}
               -
-                name: WORDPRESS_DB_USER
-                value: ${MYSQL_USER}
-              -
-                name: WORDPRESS_DB_PASSWORD
-                value: ${MYSQL_PASSWORD}
-              -
-                name: WORDPRESS_DB_NAME
-                value: ${MYSQL_DATABASE}
-              -
-                name: WORDPRESS_DB_HOST
+                name: MYSQL_HOST
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
             terminationMessagePath: /dev/termination-log
@@ -215,16 +206,7 @@ objects:
                 name: MYSQL_DATABASE
                 value: ${MYSQL_DATABASE}
               -
-                name: WORDPRESS_DB_USER
-                value: ${MYSQL_USER}
-              -
-                name: WORDPRESS_DB_PASSWORD
-                value: ${MYSQL_PASSWORD}
-              -
-                name: WORDPRESS_DB_NAME
-                value: ${MYSQL_DATABASE}
-              -
-                name: WORDPRESS_DB_HOST
+                name: MYSQL_HOST
                 value: ${APPLICATION_NAME}-db-svc
             resources:
               limits:
