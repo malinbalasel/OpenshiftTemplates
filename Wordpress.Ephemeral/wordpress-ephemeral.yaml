@@ -134,7 +134,7 @@ objects:
                 name: MYSQL_DATABASE
                 value: ${MYSQL_DATABASE}
               -
-                name: MYSQL_HOST
+                name: MYSQL_SERVICE
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
             terminationMessagePath: /dev/termination-log
@@ -206,7 +206,7 @@ objects:
                 name: MYSQL_DATABASE
                 value: ${MYSQL_DATABASE}
               -
-                name: MYSQL_HOST
+                name: MYSQL_SERVICE
                 value: ${APPLICATION_NAME}-db-svc
             resources:
               limits:
