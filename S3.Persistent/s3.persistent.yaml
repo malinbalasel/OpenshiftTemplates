@@ -153,18 +153,23 @@ objects:
                 value: "${S3_CONFIG_FILE}"
               - 
                 name: "S3DATAPATH"
-                value: /data/data
+                value: /usr/src/app/localData
               - 
                 name: "S3METADATAPATH"
-                value: /data/metadata
-            resources: {}
+                value: /usr/src/app/localMetadata
+            resources:
+              limits:
+                memory: 1500Mi
             volumeMounts:
               -
                 name: ${APPLICATION_NAME}-conf
                 mountPath: /config
               -
                 name: ${APPLICATION_NAME}-data
-                mountPath: /data
+                mountPath: /usr/src/app/localData
+              -
+                name: ${APPLICATION_NAME}-data
+                mountPath: /usr/src/app/localMetadata
             terminationMessagePath: "/dev/termination-log"
             imagePullPolicy: Always
             securityContext:
@@ -195,7 +200,7 @@ objects:
         port: 8080
         targetPort: 8080
     selector:
-      deploymentconfig: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////////
