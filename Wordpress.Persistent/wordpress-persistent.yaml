@@ -23,18 +23,18 @@ objects:
       name: ${APPLICATION_NAME}
       labels:
         app: ${APPLICATION_NAME}
-        annotations: 
+        annotations:
           description: "Defines how to build the application"
   spec:
-    triggers: 
-      - 
+    triggers:
+      -
         type: ImageChange
         imageChange: {}
-      - 
+      -
         type: ConfigChange
-      - 
+      -
         type: GitHub
-        github: 
+        github:
           secret: "${WEBHOOK_SECRET}"
     runPolicy: Serial
     source:
@@ -68,23 +68,23 @@ objects:
   spec:
     tags:
       -
-        tag: latest  
+        tag: latest
 # +++++++++++++++++++++++++++
 # +++ LAYER 3 DEPLOYMENTS +++
 # +++++++++++++++++++++++++++
 # ///////////////////////////
 # /// FRONTEND DEPLOYMENT ///
-# ///////////////////////////	    
+# ///////////////////////////
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
     name: ${APPLICATION_NAME}
     labels:
-      app: ${APPLICATION_NAME} 
-    annotations: 
+      app: ${APPLICATION_NAME}
+    annotations:
       description: "Defines how to deploy the application server"
   spec:
-    strategy: 
+    strategy:
       type: Rolling
       rollingParams:
         updatePeriodSeconds: 1
@@ -93,7 +93,7 @@ objects:
         maxUnavailable: 25%
         maxSurge: 25%
     triggers:
-    - 
+    -
       type: ImageChange
       imageChangeParams:
         automatic: true
@@ -102,7 +102,7 @@ objects:
         from:
           kind: ImageStreamTag
           name: "${APPLICATION_NAME}:latest"
-    - 
+    -
       type: ConfigChange
     replicas: 1
     test: false
@@ -111,20 +111,20 @@ objects:
     template:
       metadata:
         name: ${APPLICATION_NAME}
-        labels: 
-          deploymentConfig: ${APPLICATION_NAME}  
+        labels:
+          deploymentConfig: ${APPLICATION_NAME}
       spec:
         volumes:
-        - 
+        -
           name: "${APPLICATION_NAME}-vol"
           persistentVolumeClaim:
             claimName: ${APPLICATION_NAME}-pvc
         containers:
-          - 
+          -
             name: ${APPLICATION_NAME}
             image: ${APPLICATION_NAME}:latest
             ports:
-              - 
+              -
                 name: "http"
                 containerPort: 8080
                 protocol: TCP
@@ -143,7 +143,7 @@ objects:
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
             volumeMounts:
-              - 
+              -
                 name: "${APPLICATION_NAME}-vol"
                 mountPath: "/var/www/html"
             terminationMessagePath: /dev/termination-log
@@ -164,11 +164,11 @@ objects:
   metadata:
     name: ${APPLICATION_NAME}-db
     labels:
-      app: ${APPLICATION_NAME}  
-    annotations: 
+      app: ${APPLICATION_NAME}
+    annotations:
       description: "Defines how to deploy the application database"
   spec:
-    strategy: 
+    strategy:
       type: Recreate
       recreateParams:
         timeoutSeconds: 600
@@ -192,8 +192,8 @@ objects:
     template:
       metadata:
         name: ${APPLICATION_NAME}-db
-        labels: 
-          deploymentConfig: ${APPLICATION_NAME}-db  
+        labels:
+          deploymentConfig: ${APPLICATION_NAME}-db
       spec:
         volumes:
           -
@@ -201,7 +201,7 @@ objects:
             persistentVolumeClaim:
               claimName: ${APPLICATION_NAME}-pvc
         containers:
-          - 
+          -
             name: "${APPLICATION_NAME}-db"
             image: "${APPLICATION_NAME}-db"
             ports:
@@ -209,17 +209,17 @@ objects:
                 name: "db"
                 containerPort: 3306
                 protocol: TCP
-            env: 
-              - 
+            env:
+              -
                 name: "MYSQL_USER"
                 value: "${MYSQL_USER}"
-              - 
+              -
                 name: "MYSQL_PASSWORD"
                 value: "${MYSQL_PASSWORD}"
-              - 
+              -
                 name: "MYSQL_DATABASE"
                 value: "${MYSQL_DATABASE}"
-              - 
+              -
                 name: MYSQL_SERVICE
                 value: ${APPLICATION_NAME}-db-svc
             resources: {}
@@ -237,7 +237,7 @@ objects:
               failureThreshold: 3
             readinessProbe:
               exec:
-                command: [/bin/sh, '-i', '-c', 'MYSQL_PWD=''${MYSQL_PASSWORD}'' mysql -h 127.0.0.1 -u ${MYSQL_USER} -D ${MYSQL_DATABASE} -e ''SELECT 1''']        
+                command: [/bin/sh, '-i', '-c', 'MYSQL_PWD=''${MYSQL_PASSWORD}'' mysql -h 127.0.0.1 -u ${MYSQL_USER} -D ${MYSQL_DATABASE} -e ''SELECT 1''']
               initialDelaySeconds: 5
               timeoutSeconds: 1
               periodSeconds: 10
@@ -256,7 +256,7 @@ objects:
 # +++++++++++++++++++++++++++++++++
 # ////////////////////////
 # /// FRONTEND SERVICE ///
-# ////////////////////////		
+# ////////////////////////
 - apiVersion: v1
   kind: Service
   metadata:
@@ -273,7 +273,7 @@ objects:
         port: 8080
         targetPort: 8080
     selector:
-      deploymentconfig: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ///////////////////////
@@ -295,7 +295,7 @@ objects:
         port: 3306
         targetPort: 3306
     selector:
-      deploymentconfig: ${APPLICATION_NAME}-db
+      deploymentConfig: ${APPLICATION_NAME}-db
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////////
@@ -344,7 +344,7 @@ objects:
 # ////////////////////
 # /// PARAMETERS /////
 # ////////////////////
-parameters: 
+parameters:
   - name: "APPLICATION_NAME"
     displayName: "Application name"
     description: "The name assigned to all of the objects defined in this template."
