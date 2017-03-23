@@ -250,16 +250,18 @@ objects:
     config.json: |
       {
           "port": 8080,
-          "regions": {
-              "localregion": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local"],
-              "defaultregion": ["${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange"],
-              "specificregion": ["${APPLICATION_HOSTNAME}"]
+          "listenOn": [],
+          "restEndpoints": {
+             "localhost": "file",
+             "127.0.0.1": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "${APPLICATION_NAME}-internal",
+             "${APPLICATION_HOSTNAME}": "${APPLICATION_NAME}-external"
           },
-          "sproxyd": {
-              "bootstrap": ["localhost:8181"]
-          },
+          "websiteEndpoints": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local",
+                               "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange",
+                               "${APPLICATION_HOSTNAME}"],
           "bucketd": {
-              "bootstrap": ["s3.scality.test"]
+              "bootstrap": ["localhost"]
           },
           "vaultd": {
               "host": "localhost",
