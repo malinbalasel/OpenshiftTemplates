@@ -254,8 +254,9 @@ objects:
           "restEndpoints": {
              "localhost": "file",
              "127.0.0.1": "file",
-             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "${APPLICATION_NAME}-internal",
-             "${APPLICATION_HOSTNAME}": "${APPLICATION_NAME}-external"
+             "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "file",
+             "${APPLICATION_HOSTNAME}": "scality-us-west-1"
           },
           "websiteEndpoints": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local",
                                "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange",
