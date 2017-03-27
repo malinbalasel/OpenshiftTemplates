@@ -250,16 +250,16 @@ objects:
     config.json: |
       {
           "port": 8080,
-          "listenOn": [],
-          "restEndpoints": {
-             "localhost": "file",
-             "127.0.0.1": "file",
-             "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
-             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "file",
-             "${APPLICATION_HOSTNAME}": "file"
+          "regions": {
+              "localregion": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local"],
+              "defaultregion": ["${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange"],
+              "specificregion": ["${APPLICATION_HOSTNAME}"]
+          },
+          "sproxyd": {
+               "bootstrap": ["localhost:8181"]
           },
           "bucketd": {
-              "bootstrap": ["localhost"]
+              "bootstrap": ["s3.scality.test"]
           },
           "vaultd": {
               "host": "localhost",
@@ -306,7 +306,7 @@ parameters:
   - name: "SOURCE_REPOSITORY_REF"
     displayName: "Git Repository Reference"
     description: "The branch/tag/ref inside the repository where your application source code resides."
-    value: "master"
+    value: "GA6.3.4"
   - name: "SOURCE_REPOSITORY_CONTEXT"
     displayName: "Git Repository Context Directory"
     description: "The location inside the repository where your application source code resides."
@@ -319,8 +319,8 @@ parameters:
     displayName: "S3 server config file path"
     value: "/config/config.json"
   - name: "S3_VOLUME_CAPACITY"
-    description: Volume space available for the S3 storage.
-    displayName: S3 Volume Capacity
-    name: S3_VOLUME_CAPACITY
+    description: "Volume space available for the S3 storage."
+    displayName: "S3 Volume Capacity"
+    name: "S3_VOLUME_CAPACITY"
     required: true
     value: "3Gi"
