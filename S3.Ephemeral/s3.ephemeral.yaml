@@ -217,18 +217,16 @@ objects:
     config.json: |
       {
           "port": 8080,
-          "listenOn": [],
-          "restEndpoints": {
-             "localhost": "file",
-             "127.0.0.1": "file",
-             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "${APPLICATION_NAME}-internal",
-             "${APPLICATION_HOSTNAME}": "${APPLICATION_NAME}-external"
+          "regions": {
+              "localregion": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local"],
+              "defaultregion": ["${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange"],
+              "specificregion": ["${APPLICATION_HOSTNAME}"]
           },
-          "websiteEndpoints": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local",
-                               "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange",
-                               "${APPLICATION_HOSTNAME}"],
+          "sproxyd": {
+               "bootstrap": ["localhost:8181"]
+          },
           "bucketd": {
-              "bootstrap": ["localhost"]
+              "bootstrap": ["s3.scality.test"]
           },
           "vaultd": {
               "host": "localhost",
@@ -275,7 +273,7 @@ parameters:
   - name: "SOURCE_REPOSITORY_REF"
     displayName: "Git Repository Reference"
     description: "The branch/tag/ref inside the repository where your application source code resides."
-    value: "master"
+    value: "GA6.3.4"
   - name: "SOURCE_REPOSITORY_CONTEXT"
     displayName: "Git Repository Context Directory"
     description: "The location inside the repository where your application source code resides."
