@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: s3-GA6.3.4-persistent
+  name: s3-GA634-persistent
   annotations:
     description: "An Scality S3 server with an persistent storage."
     iconClass: "icon-nodejs"
     tags: "quickstart,instant-app,nodejs,kermit"
 labels:
-  template: s3-GA6.3.4-persistent
+  template: s3-GA634-persistent
 objects:
 # +++++++++++++++++++++++++++
 # +++ LAYER 0 BASE IMAGES +++
