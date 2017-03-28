@@ -258,7 +258,7 @@ objects:
              "127.0.0.2": "scality-us-west-1",
              "s3.amazonaws.com": "scality-us-west-1",
              "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
-             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit-pp.itn.intraorange": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "file",
              "${APPLICATION_HOSTNAME}": "file"
           },
           "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
