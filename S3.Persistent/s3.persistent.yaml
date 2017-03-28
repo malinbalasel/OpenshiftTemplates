@@ -250,28 +250,31 @@ objects:
     config.json: |
       {
           "port": 8080,
-          "regions": {
-              "ap-northeast-1": ["s3.ap-northeast-1.amazonaws.com"],
-              "ap-southeast-1": ["s3.ap-southeast-1.amazonaws.com"],
-              "ap-southeast-2": ["s3.ap-southeast-2.amazonaws.com"],
-              "eu-central-1": ["s3.eu-central-1.amazonaws.com",
-                               "s3.eu.central-1.amazonaws.com"],
-              "eu-west-1": ["s3.eu-west-1.amazonaws.com"],
-              "sa-east-1": ["s3.sa-east-1.amazonaws.com"],
-              "us-east-1": ["s3.amazonaws.com",
-                            "s3-external-1.amazonaws.com",
-                            "s3.us-east-1.amazonaws.com"],
-              "us-west-1": ["s3.us-west-1.amazonaws.com"],
-              "us-west-2": ["s3-us-west-2.amazonaws.com"],
-              "us-gov-west-1": ["s3-us-gov-west-1.amazonaws.com",
-                                "s3-fips-us-gov-west-1.amazonaws.com"],
-              "localregion": ["${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local"],
-              "defaultregion": ["${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange"],
-              "specificregion": ["${APPLICATION_HOSTNAME}"]
+          "listenOn": [],
+          "restEndpoints": {
+             "localhost": "file",
+             "127.0.0.1": "file",
+             "s3.docker.test": "scality-us-west-1",
+             "127.0.0.2": "scality-us-west-1",
+             "s3.amazonaws.com": "scality-us-west-1",
+             "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit-pp.itn.intraorange": "file",
+             "${APPLICATION_HOSTNAME}": "file"
           },
-          "sproxyd": {
-               "bootstrap": ["localhost:8181"]
-          },
+          "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
+                               "s3-website.us-east-2.amazonaws.com",
+                               "s3-website-us-west-1.amazonaws.com",
+                               "s3-website-us-west-2.amazonaws.com",
+                               "s3-website.ap-south-1.amazonaws.com",
+                               "s3-website.ap-northeast-2.amazonaws.com",
+                               "s3-website-ap-southeast-1.amazonaws.com",
+                               "s3-website-ap-southeast-2.amazonaws.com",
+                               "s3-website-ap-northeast-1.amazonaws.com",
+                               "s3-website.eu-central-1.amazonaws.com",
+                               "s3-website-eu-west-1.amazonaws.com",
+                               "s3-website-sa-east-1.amazonaws.com",
+                               "s3-website.localhost",
+                               "s3-website.scality.test"],
           "bucketd": {
               "bootstrap": ["localhost"]
           },
@@ -320,7 +323,7 @@ parameters:
   - name: "SOURCE_REPOSITORY_REF"
     displayName: "Git Repository Reference"
     description: "The branch/tag/ref inside the repository where your application source code resides."
-    value: "GA6.3.4"
+    value: "master"
   - name: "SOURCE_REPOSITORY_CONTEXT"
     displayName: "Git Repository Context Directory"
     description: "The location inside the repository where your application source code resides."
