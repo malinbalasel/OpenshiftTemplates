@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: s3-GA6.3.4-ephemeral
+  name: s3-GA634-ephemeral
   annotations:
     description: "An Scality S3 server."
     iconClass: "icon-nodejs"
     tags: "quickstart,instant-app,nodejs,kermit"
 labels:
-  template: s3-GA6.3.4-ephemeral
+  template: s3-GA634-ephemeral
 objects:
 # +++++++++++++++++++++++++++
 # +++ LAYER 0 BASE IMAGES +++
