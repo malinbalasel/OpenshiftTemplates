@@ -1,0 +1,304 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: s3-ephemeral
+  annotations:
+    description: "An Scality S3 server."
+    iconClass: "icon-nodejs"
+    tags: "quickstart,instant-app,nodejs,kermit"
+labels:
+  template: s3-ephemeral
+objects:
+# +++++++++++++++++++++++++++
+# +++ LAYER 0 BASE IMAGES +++
+# +++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: centos7-s2i-nodejs
+    labels:
+      app: ${APPLICATION_NAME}
+  spec:
+    tags:
+    - name: "6"
+      from:
+        kind: DockerImage
+        name: ryanj/centos7-s2i-nodejs:6
+# +++++++++++++++++++++++++++
+# ++++++ LAYER 1 BUILDS +++++
+# +++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_NAME}
+        annotations: 
+          description: "Defines how to build the application"
+  spec:
+    triggers: 
+      - 
+        type: ImageChange
+        imageChange: {}
+      - 
+        type: ConfigChange
+      - 
+        type: GitHub
+        github: 
+          secret: "${WEBHOOK_SECRET}"
+      - 
+        type: Generic
+        generic: 
+          secret: "${WEBHOOK_SECRET}"
+    runPolicy: Serial
+    source:
+      type: Git
+      git:  
+        uri: ${SOURCE_REPOSITORY_URL}
+        ref: ${SOURCE_REPOSITORY_REF}
+      contextDir: ${SOURCE_REPOSITORY_CONTEXT} 	  
+    strategy:
+      type: Source
+      sourceStrategy:
+        from: 
+          kind: ImageStreamTag
+          name: "centos7-s2i-nodejs:6"
+        env: {}	
+    output:
+      to: 
+        kind: ImageStreamTag
+        name: "${APPLICATION_NAME}:latest"
+# +++++++++++++++++++++++++++
+# ++++++ LAYER 2 IMAGES +++++
+# +++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Resulting Docker Image after the buit of my application frontend."
+  spec:
+    tags:
+      -
+        tag: latest
+# +++++++++++++++++++++++++++
+# +++ LAYER 3 DEPLOYMENTS +++
+# +++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME} 
+    annotations: 
+      description: "Defines how to deploy the application server"
+  spec:
+    strategy: 
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%		
+    triggers:
+      -
+        type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${APPLICATION_NAME}
+          from:
+            kind: ImageStreamTag
+            name: ${APPLICATION_NAME}:latest
+      -
+        type: ConfigChange
+    replicas: 1
+    test: false
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+    template:
+      metadata:
+        name: ${APPLICATION_NAME}
+        labels: 
+          deploymentConfig: ${APPLICATION_NAME}	  
+      spec:
+        volumes:
+          -
+            name: ${APPLICATION_NAME}-conf
+            configMap:
+              name: ${APPLICATION_NAME}
+              items:
+              - key: config.json
+                path: config.json
+        containers:
+          - 
+            name: "${APPLICATION_NAME}"
+            image: "${APPLICATION_NAME}"
+            ports:
+              -
+                name: "port-http"
+                containerPort: 8080
+                protocol: TCP
+            env: 
+              - 
+                name: "S3_CONFIG_FILE"
+                value: "${S3_CONFIG_FILE}"
+            resources: {}
+            volumeMounts:
+              -
+                name: ${APPLICATION_NAME}-conf
+                mountPath: /config
+            terminationMessagePath: "/dev/termination-log"
+            imagePullPolicy: Always
+            securityContext:
+              capabilities: {}
+              privileged: false		
+        restartPolicy: "Always"
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: "ClusterFirst"
+# +++++++++++++++++++++++++++++++++
+# ++++++ LAYER 4 ABSTRACTIONS +++++
+# +++++++++++++++++++++++++++++++++
+# ////////////////////////
+# /// FRONTEND SERVICE ///
+# ////////////////////////
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: "${APPLICATION_NAME}-svc"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Exposes and load balances the application frontend pods."
+  spec:
+    ports:
+      -
+        name: "port-http"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# ////////////////////////
+# /// FRONTEND ROUTE /////
+# ////////////////////////
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+      network: ${PUBLIC_NETWORK}
+    annotations:
+      description: "The route exposes the frontend service at a hostname."
+  spec:
+    host: "${APPLICATION_HOSTNAME}"
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}-svc
+    port:
+      targetPort: 8080
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Allow
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# ////////////////////
+# /// CONFIG MAP /////
+# ////////////////////
+- apiVersion: v1
+  data:
+    config.json: |
+      {
+          "port": 8080,
+          "listenOn": [],
+          "restEndpoints": {
+             "localhost": "file",
+             "127.0.0.1": "file",
+             "s3.docker.test": "scality-us-west-1",
+             "127.0.0.2": "scality-us-west-1",
+             "s3.amazonaws.com": "scality-us-west-1",
+             "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit-pp.itn.intraorange": "file",
+             "${APPLICATION_HOSTNAME}": "file"
+          },
+          "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
+                               "s3-website.us-east-2.amazonaws.com",
+                               "s3-website-us-west-1.amazonaws.com",
+                               "s3-website-us-west-2.amazonaws.com",
+                               "s3-website.ap-south-1.amazonaws.com",
+                               "s3-website.ap-northeast-2.amazonaws.com",
+                               "s3-website-ap-southeast-1.amazonaws.com",
+                               "s3-website-ap-southeast-2.amazonaws.com",
+                               "s3-website-ap-northeast-1.amazonaws.com",
+                               "s3-website.eu-central-1.amazonaws.com",
+                               "s3-website-eu-west-1.amazonaws.com",
+                               "s3-website-sa-east-1.amazonaws.com",
+                               "s3-website.localhost",
+                               "s3-website.scality.test"],
+          "bucketd": {
+              "bootstrap": ["localhost"]
+          },
+          "vaultd": {
+              "host": "localhost",
+              "port": 8500
+          },
+          "clusters": 10,
+          "log": {
+              "logLevel": "info",
+              "dumpLevel": "error"
+          },
+          "healthChecks": {
+              "allowFrom": ["127.0.0.1/8", "::1"]
+          }
+      }
+  kind: ConfigMap
+  metadata:
+    name: ${APPLICATION_NAME}
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# ////////////////////
+# /// PARAMETERS /////
+# ////////////////////
+parameters: 
+  - name: "APPLICATION_NAME"
+    displayName: "Application name"
+    description: "The name assigned to all of the objects defined in this template."
+    required: true
+    value: "s3"
+  - name: "PROJECT_NAME"
+    displayName: "Project name"
+    description: "The name of the Project (namespace) where your application will be deployed."
+    required: true
+  - name: "APPLICATION_HOSTNAME"
+    displayName: "Application hostname"
+    description: "If you want to use other hostname than the default one. The hostname for exposing your application on the Internal Network (*.kermit-pp.itn.intraorange) or on the Internet (*.pp.kmt.orange.com)."
+  - name: "PUBLIC_NETWORK"
+    displayName: "If your application will be exposed on the Internet (HOSTNAME = *.pp.kmt.orange.com) you need to setup this flag with the value: public"
+    description: "The name assigned to all of the objects defined in this template."
+  - name: "SOURCE_REPOSITORY_URL"
+    displayName: "Git Repository URL"
+    description: "The URL of the repository with your application source code."
+    required: true
+    value: "https://github.com/scality/S3.git"
+  - name: "SOURCE_REPOSITORY_REF"
+    displayName: "Git Repository Reference"
+    description: "The branch/tag/ref inside the repository where your application source code resides."
+    value: "master"
+  - name: "SOURCE_REPOSITORY_CONTEXT"
+    displayName: "Git Repository Context Directory"
+    description: "The location inside the repository where your application source code resides."
+  - name: "WEBHOOK_SECRET"
+    displayName: "Git Webhook Secret"
+    description: "A secret string used to configure the Git webhook."
+    generate: "expression"
+    from: "[a-zA-Z0-9]{40}"
+  - name: "S3_CONFIG_FILE"
+    displayName: "S3 server config file path"
+    value: "/config/config.json"
