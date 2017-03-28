@@ -225,7 +225,7 @@ objects:
              "127.0.0.2": "scality-us-west-1",
              "s3.amazonaws.com": "scality-us-west-1",
              "${APPLICATION_NAME}.${PROJECT_NAME}.svc.cluster.local": "file",
-             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit-pp.itn.intraorange": "file",
+             "${APPLICATION_NAME}-${PROJECT_NAME}.kermit.itn.intraorange": "file",
              "${APPLICATION_HOSTNAME}": "file"
           },
           "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
@@ -278,9 +278,9 @@ parameters:
     required: true
   - name: "APPLICATION_HOSTNAME"
     displayName: "Application hostname"
-    description: "If you want to use other hostname than the default one. The hostname for exposing your application on the Internal Network (*.kermit-pp.itn.intraorange) or on the Internet (*.pp.kmt.orange.com)."
+    description: "If you want to use other hostname than the default one. The hostname for exposing your application on the Internal Network (*.kermit.itn.intraorange) or on the Internet (*.kmt.orange.com)."
   - name: "PUBLIC_NETWORK"
-    displayName: "If your application will be exposed on the Internet (HOSTNAME = *.pp.kmt.orange.com) you need to setup this flag with the value: public"
+    displayName: "If your application will be exposed on the Internet (HOSTNAME = *.kmt.orange.com) you need to setup this flag with the value: public"
     description: "The name assigned to all of the objects defined in this template."
   - name: "SOURCE_REPOSITORY_URL"
     displayName: "Git Repository URL"
