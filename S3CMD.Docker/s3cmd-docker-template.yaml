@@ -134,7 +134,6 @@ parameters:
   displayName: "S3 Server Account Secret"
   description: "The secret value used for password authentication to the S3 Server."
   required: true
-  value: R3y5StuyukafUwr
 - name: S3_SERVER_HOST
   displayName: "S3 Server hostname"
   description: "The hostname of the S3 Server."
