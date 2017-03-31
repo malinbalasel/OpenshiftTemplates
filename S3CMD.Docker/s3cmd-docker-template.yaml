@@ -102,10 +102,8 @@ objects:
             value: "${OPERATION}"
           - name: "s3_host_base"
             value: "${S3_SERVER_HOST}"
-          - name: "DEST_S3"
-            value: "s3://${S3_BUCKET}"
-          - name: "SRC_S3"
-            value: "s3://${S3_BUCKET}"	
+          - name: "s3_host_bucket"
+            value: "s3://${S3_BUCKET_NAME}.${S3_SERVER_HOST}"	
     triggers:
     - imageChangeParams:
         automatic: true
@@ -115,7 +113,46 @@ objects:
           kind: ImageStreamTag
           name: ${APPLICATION_NAME}:latest
       type: ImageChange
-    - type: ConfigChange	  
+    - type: ConfigChange
+# +++++++++++++++++++++++++++++++++
+# ++++++ LAYER 4 ABSTRACTIONS +++++
+# +++++++++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: "${APPLICATION_NAME}-svc"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Exposes and load balances the application pods."
+  spec:
+    ports:
+      -
+        name: "http"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+      network: ${PUBLIC_NETWORK}
+    annotations:
+      description: "The route exposes the service with an hostname."
+  spec:
+    host: "${APPLICATION_HOSTNAME}"
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}-svc
+    port:
+      targetPort: 8080
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Allow
 ##############
 # Parameters #
 ##############
@@ -125,6 +162,12 @@ parameters:
   description: "The name assigned to all of the objects defined in this template."
   required: true
   value: "s3cmd"
+- name: "APPLICATION_HOSTNAME"
+  displayName: "Application hostname"
+  description: "The hostname for exposing your application on the Internal Network (*.kermit.itn.intraorange) or on the Internet (*.kmt.orange.com)."
+- name: "PUBLIC_NETWORK"
+  displayName: "Application exposed on Internet Flag"
+  description: "If your application will be exposed on the Internet (HOSTNAME = *.kmt.orange.com) you need to setup this flag with the value: public"
 - name: ACCOUNT_KEY
   displayName: "S3 Server Account Key"
   description: "The key value used for user authentication to the S3 Server."
@@ -139,7 +182,7 @@ parameters:
   description: "The hostname of the S3 Server."
   required: true
   value: storage.orange.com
-- name: S3_BUCKET
+- name: S3_BUCKET_NAME
   displayName: "S3 Server bucket"
   description: "The bucket name within the S3 Server."
   required: true
