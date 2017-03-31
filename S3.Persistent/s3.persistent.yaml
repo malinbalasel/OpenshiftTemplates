@@ -31,11 +31,11 @@ objects:
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-      name: ${APPLICATION_NAME}
-      labels:
-        app: ${APPLICATION_NAME}
-        annotations: 
-          description: "Defines how to build the application"
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      annotations: 
+        description: "Defines how to build the application"
   spec:
     triggers: 
       - 
