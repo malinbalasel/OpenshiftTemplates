@@ -1,0 +1,255 @@
+##################
+# BEGIN TEMPLATE #
+##################
+apiVersion: v1
+kind: Template
+metadata:
+  name: "mongodb-backup-template"
+  annotations:
+    description: "Create a scheduledjob to backup data in a project"
+labels:
+  template: "mongodb-backup-template"
+objects:
+###################
+# Service Account #
+###################
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ${APPLICATION_NAME}
+################
+# Role Binding #
+################
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: system:${APPLICATION_NAME}
+  roleRef:
+    name: kermit-user
+  subjects:
+  - kind: SystemUser
+    name: system:serviceaccounts:${PROJECT_NAME}:${APPLICATION_NAME}
+    namespace: ${PROJECT_NAME}
+  userNames:
+  - system:serviceaccount:${PROJECT_NAME}:${APPLICATION_NAME}
+########################
+### Layer 1: Builds ####
+########################
+- kind: "BuildConfig"
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+      annotations: 
+        description: "Defines how to build the application"
+  spec:
+    source:
+      type: "Git"
+      git:
+        uri: "${SOURCE_REPOSITORY_URL}"
+    strategy:
+      type: "Docker"
+    output:
+      to:
+        kind: "ImageStreamTag"
+        name: "${APPLICATION_NAME}:latest"
+    triggers:
+      - type: "ImageChange"
+      - type: "ConfigChange"
+###################
+# Layer 2: Images #
+###################
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Resulting Docker Image after the buid."
+  spec:
+    tags:
+      -
+        tag: latest
+# +++++++++++++++++++++++++++++++++
+# ++++++ LAYER 4 ABSTRACTIONS +++++
+# +++++++++++++++++++++++++++++++++
+#################
+# Scheduled Job #
+#################
+- kind: ScheduledJob
+  apiVersion: batch/v2alpha1
+  metadata:
+    name: ${APPLICATION_NAME}
+  spec:
+    schedule: ${SCHEDULED_VALUE}
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            activeDeadlineSeconds: 600
+            volumes:
+              -
+                name: "${MONGODB_VOL_NAME}"
+                persistentVolumeClaim:
+                  claimName: "${MONGODB_PVC_NAME}"
+            containers:
+              - name: ${APPLICATION_NAME}
+                image: 172.30.97.45:5000/${PROJECT_NAME}/${APPLICATION_NAME}:latest
+                volumeMounts:
+                  -
+                    name: "${MONGODB_VOL_NAME}"
+                    mountPath: /var/lib/mongodb/data
+                command: 
+                  - /bin/sh
+                  - -c
+                  - |
+                    /opt/run.sh
+                    echo "Starting the new MongoDB dump locally ..."
+                    mkdir -p ${MONGODBDUMP_DIRECTORY}
+                    mongodump --host ${MONGODB_SERVICE}.${PROJECT_NAME}.svc.cluster.local --username ${MONGODB_USER} --password ${MONGODB_PASSWORD} --db ${MONGODB_DATABASE} --gzip --out ${MONGODBDUMP_DIRECTORY}/${MONGODB_DATABASE}_$(date +'%Y%m%d_%H%M%S')
+                    echo "DB dump finished."
+                    echo "Starting the cleanup of old dump files ..."
+                    cd ${MONGODBDUMP_DIRECTORY}
+                    (ls -t ${MONGODB_DATABASE}_*|head -n ${MONGODBDUMP_HISTORY_LIMIT};ls ${MONGODB_DATABASE}_*)|sort|uniq -u|sed -e 's,.*,\"&\",g'|xargs -r rm
+                    echo "Cleanup finished."
+                    echo "Uploading the new backup to OBOS..."
+                    s3cmd sync ${MONGODBDUMP_DIRECTORY}/ ${s3_host_bucket}/${MONGODB_DATABASE}/
+                    echo "New backup uploaded."
+                    echo "Starting the cleanup of old bucket files in OBOS..."
+                    /opt/cleanup.sh
+                    echo "Cleanup finished."
+                env:
+                  -
+                    name: "APPLICATION_NAME"
+                    value: "${APPLICATION_NAME}"
+                  -
+                    name: "PROJECT_NAME"
+                    value: "${PROJECT_NAME}"
+                  -
+                    name: "MONGODB_USER"
+                    value: "${MONGODB_USER}"
+                  -
+                    name: "MONGODB_PASSWORD"
+                    value: "${MONGODB_PASSWORD}"
+                  -
+                    name: "MONGODB_DATABASE"
+                    value: "${MONGODB_DATABASE}"
+                  -
+                    name: MONGODB_SERVICE_HOST
+                    value: "${MONGODB_SERVICE_HOST}"
+                  - 
+                    name: MONGODBDUMP_HISTORY_LIMIT
+                    value: "${MONGODBDUMP_HISTORY_LIMIT}"
+                  - 
+                    name: MONGODBDUMP_DIRECTORY
+                    value: /var/lib/mongodb/data/backup
+                  - 
+                    name: S3CMD_CONFIG
+                    value: /opt/.s3cfg
+                  - 
+                    name: "aws_key"
+                    value: "${ACCOUNT_KEY}"
+                  - 
+                    name: "aws_secret"
+                    value: "${ACCOUNT_SECRET}"
+                  - 
+                    name: "s3_host_base"
+                    value: "${S3_SERVER_HOST}"
+                  - 
+                    name: "s3_host_bucket"
+                    value: "s3://${S3_BUCKET_NAME}"
+                  - 
+                    name: S3_BUCKET_RETENTION
+                    value: "${S3_BUCKET_RETENTION}"
+                  - 
+                    name: "s3_host_use_https"
+                    value: "${S3_SERVER_HTTPS}"
+                  - 
+                    name: "s3_host_signature_v2"
+                    value: "${S3_SERVER_SIG_V2}"
+            restartPolicy: OnFailure
+            serviceAccountName: "${APPLICATION_NAME}"
+##############
+# Parameters #
+##############
+parameters:
+- name: APPLICATION_NAME
+  displayName: "Application name"
+  description: "The name assigned to all of the objects defined in this template."
+  required: true
+  value: "mongodb-backup"
+- name: PROJECT_NAME  
+  displayName: "Project name"
+  description: "The name of your project."
+  required: true
+- name: "SOURCE_REPOSITORY_URL"
+  displayName: "Git Repository URL"
+  description: "The URL of the repository with your application source code."
+  value: "https://github.com/orangekmt/docker-s3cmd.git"
+- name: SCHEDULED_VALUE
+  displayName: " Scheduled Value"
+  description: "Value to set for the schedule (cron format)"
+  required: true
+  value: "20 * * * *"
+- name: ACCOUNT_KEY
+  displayName: "S3 Server Account Key"
+  description: "The key value used for user authentication to the S3 Server."
+  required: true
+- name: ACCOUNT_SECRET
+  displayName: "S3 Server Account Secret"
+  description: "The secret value used for password authentication to the S3 Server."
+  required: true
+- name: S3_SERVER_HOST
+  displayName: "S3 Server hostname"
+  description: "The hostname of the S3 Server."
+  required: true
+  value: storage.orange.com
+- name: S3_SERVER_HTTPS
+  displayName: "S3 Server HTTPS"
+  description: "Set the flag True for OBOS (uses HTTPS) and False for regular Scality S3 Server."
+  required: true
+  value: "True"
+- name: S3_SERVER_SIG_V2
+  displayName: "S3 Server Signature V2"
+  description: "Set the flag True for OBOS and False for regular Scality S3 Server."
+  required: true
+  value: "True"
+- name: S3_BUCKET_NAME
+  displayName: "S3 Server bucket"
+  description: "The bucket name within the S3 Server."
+- name: S3_BUCKET_RETENTION
+  displayName: "Bucket files retention limit (number of days)"
+  required: true
+  value: "5"
+  required: true
+- name: "MONGODB_USER"
+  displayName: "Database username"
+  required: true
+  value: mongo
+- name: "MONGODB_PASSWORD"
+  displayName: "Database password"
+  required: true
+  value: mongo
+- name: "MONGODB_DATABASE"
+  displayName: "Database name"
+  required: true
+  value: sampledb
+- name: MONGODB_SERVICE
+  displayName: "Database service name"
+  required: true
+  value: mongodb
+- name: MONGODB_VOL_NAME
+  displayName: "Database Volume Mount name"
+  required: true
+  value: mongodb-data
+- name: MONGODB_PVC_NAME
+  displayName: "Database Volume Mount name"
+  required: true
+  value: mongodb  
+- name: MONGODBDUMP_HISTORY_LIMIT
+  displayName: "MySQL dump history limit (number of dump files)"
+  required: true
+  value: "4"
